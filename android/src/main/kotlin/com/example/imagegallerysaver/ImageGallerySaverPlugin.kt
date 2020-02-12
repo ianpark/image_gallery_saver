@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Environment
+import android.util.Log
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
@@ -15,6 +16,7 @@ import io.flutter.plugin.common.PluginRegistry.Registrar
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.nio.ByteBuffer
 
 class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandler {
 
@@ -36,6 +38,15 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
           val path = call.arguments as String
           result.success(saveFileToGallery(path))
         }
+        call.method == "saveFileToGalleryWithPath" -> {
+          val data = call.argument<ByteArray>("data")!!
+          val bucket = call.argument<String>("bucket")!!
+          var filename = call.argument<String>("filename")!!
+
+          Log.d("Regram", "${data.size}")
+
+          result.success(saveFileToGalleryWithPath(data, bucket, filename))
+        }
         else -> result.notImplemented()
     }
 
@@ -43,6 +54,7 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
 
   private fun generateFile(extension: String = ""): File {
     val storePath =  Environment.getExternalStorageDirectory().absolutePath + File.separator + getApplicationName()
+
     val appDir = File(storePath)
     if (!appDir.exists()) {
       appDir.mkdir()
@@ -52,6 +64,33 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
       fileName += ("." + extension)
     }
     return File(appDir, fileName)
+  }
+
+  private fun generateFileWithName(bucket: String = "", filename: String = ""): File {
+    val storePath =  Environment.getExternalStorageDirectory().absolutePath + File.separator + bucket
+
+    val appDir = File(storePath)
+    if (!appDir.exists()) {
+      appDir.mkdir()
+    }
+    return File(appDir, filename)
+  }
+
+  private fun saveFileToGalleryWithPath(data: ByteArray, bucket: String = "", filename: String = "") : String {
+    val context = registrar.activeContext().applicationContext
+    val file = generateFileWithName(bucket, filename);
+    try {
+      val fos = FileOutputStream(file);
+      fos.write(data);
+      fos.flush();
+      fos.close();
+      val uri = Uri.fromFile(file)
+      context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri))
+      return uri.toString()
+    } catch (e: IOException) {
+      e.printStackTrace();
+    }
+    return "";
   }
 
   private fun saveImageToGallery(bmp: Bitmap): String {

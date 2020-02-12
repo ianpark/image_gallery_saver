@@ -12,16 +12,26 @@ class ImageGallerySaver {
   static Future saveImage(Uint8List imageBytes) async {
     assert(imageBytes != null);
     final result =
-    await _channel.invokeMethod('saveImageToGallery', imageBytes);
+        await _channel.invokeMethod('saveImageToGallery', imageBytes);
+    return result;
+  }
+
+  static Future saveFileWithPath(
+      Uint8List data, String bucket, String filename) async {
+    assert(data != null);
+    final result = await _channel.invokeMethod(
+        'saveFileToGalleryWithPath', <String, dynamic>{
+      "data": data,
+      "bucket": bucket,
+      "filename": filename
+    });
     return result;
   }
 
   /// Save the PNG，JPG，JPEG image or video located at [file] to the local device media gallery.
   static Future saveFile(String file) async {
     assert(file != null);
-    final result =
-    await _channel.invokeMethod('saveFileToGallery', file);
+    final result = await _channel.invokeMethod('saveFileToGallery', file);
     return result;
   }
-
 }
