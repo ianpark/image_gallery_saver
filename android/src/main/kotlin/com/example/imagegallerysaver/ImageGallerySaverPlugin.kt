@@ -67,7 +67,12 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
   }
 
   private fun generateFileWithName(bucket: String = "", filename: String = ""): File {
-    val storePath =  Environment.getExternalStorageDirectory().absolutePath + File.separator + bucket
+    var finalBucketName = bucket;
+    if (finalBucketName == "") {
+      finalBucketName = getApplicationName();
+    }
+
+    val storePath =  Environment.getExternalStorageDirectory().absolutePath + File.separator + finalBucketName
 
     val appDir = File(storePath)
     if (!appDir.exists()) {
